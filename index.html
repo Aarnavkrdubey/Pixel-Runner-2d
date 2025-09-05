@@ -225,7 +225,7 @@
         const jumpStrength = -12;
         const groundHeight = 20;
         
-        let player, obstacles, score, highScore, gameSpeed, isGameOver;
+        let player, obstacles, score, highScore, gameSpeed, isGameOver, isInvincible;
 
         // Player object
         class Player {
@@ -248,6 +248,13 @@
             }
 
             draw() {
+                // Add visual indicator for invincibility
+                if (isInvincible) {
+                    ctx.globalAlpha = 0.6;
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = "#00ffff";
+                }
+
                 // Update animation frame only when on the ground
                 if (!this.isJumping) {
                     this.animFrame = (this.animFrame + 0.2) % 4;
@@ -370,6 +377,10 @@
                             break;
                     }
                 }
+                
+                // Reset alpha and shadow so it doesn't affect other elements
+                ctx.globalAlpha = 1.0;
+                ctx.shadowBlur = 0;
             }
 
             update() {
@@ -430,6 +441,7 @@
             highScore = localStorage.getItem('pixelRunnerHighScore') || 0;
             gameSpeed = 5;
             isGameOver = false;
+            isInvincible = false;
 
             scoreEl.textContent = `Score: ${score}`;
             highScoreEl.textContent = `High Score: ${highScore}`;
@@ -485,7 +497,9 @@
                     player.y < o.y + o.height &&
                     player.y + player.height > o.y
                 ) {
-                    endGame();
+                    if (!isInvincible) {
+                        endGame();
+                    }
                 }
 
                 // Remove obstacles that have gone off-screen
@@ -532,6 +546,13 @@
         document.addEventListener('keydown', handleJump);
         canvas.addEventListener('mousedown', handleJump);
         canvas.addEventListener('touchstart', handleJump);
+
+        // Cheat code event listener
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'i' || e.key === 'I') {
+                isInvincible = !isInvincible;
+            }
+        });
         
         // Game state functions
         function startGame() {
@@ -556,3 +577,4 @@
     </script>
 </body>
 </html>
+
