@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pixel Runner 2D</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        /* Keyframe animation for button pulse */
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                box-shadow: 0 5px #000, 0 0 15px rgba(0, 255, 255, 0.7);
+            }
+            50% {
+                transform: scale(1.05);
+                box-shadow: 0 8px #000, 0 0 25px rgba(0, 255, 255, 1);
+            }
+            100% {
+                transform: scale(1);
+                box-shadow: 0 5px #000, 0 0 15px rgba(0, 255, 255, 0.7);
+            }
+        }
+        
+        /* Basic page styling */
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: #0f0c29;
+            background: -webkit-linear-gradient(to right, #24243e, #302b63, #0f0c29);
+            background: linear-gradient(to right, #24243e, #302b63, #0f0c29);
+            font-family: 'Press Start 2P', cursive;
+            color: #fff;
+            overflow: hidden;
+        }
+
+        /* Game container styling */
+        .game-container {
+            text-align: center;
+            border: 4px solid #00ffff;
+            border-radius: 15px;
+            padding: 25px;
+            background: rgba(10, 10, 20, 0.8);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            box-shadow: 0 0 20px #00ffff, 0 0 40px #00ffff, 0 0 60px #ff00ff;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            color: #fff;
+            text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 20px #ff00ff, 0 0 30px #ff00ff, 0 0 40px #ff00ff, 0 0 55px #ff00ff, 0 0 75px #ff00ff;
+        }
+
+        /* Canvas where the game is rendered */
+        canvas {
+            background-color: #000;
+            border: 4px solid #777;
+            border-radius: 8px;
+            display: block;
+            margin: 10px auto;
+            max-width: 100%;
+        }
+
+        /* UI elements styling */
+        #ui-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            font-size: 1.2rem;
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            margin-bottom: 15px;
+            text-shadow: 2px 2px 4px #000;
+        }
+        
+        #score {
+            color: #00ff00;
+            text-align: left;
+        }
+
+        #high-score {
+            color: #ffff00;
+            text-align: right;
+        }
+
+        /* Game Over and Start screens */
+        #game-over-screen, #start-screen {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.8);
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            z-index: 10;
+        }
+        
+        #start-screen {
+            border: 4px solid #ff00ff;
+            box-shadow: 0 0 20px rgba(255, 0, 255, 0.5);
+        }
+
+        #start-screen h2 {
+            margin-top: 0;
+            font-size: 1.8rem;
+            color: #00ffff;
+            text-shadow: 0 0 10px #00ffff;
+        }
+        
+        #start-screen p {
+            margin-bottom: 25px;
+            font-size: 0.9rem;
+            color: #eee;
+        }
+        
+        #game-over-screen {
+             border: 4px solid #fff;
+             box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+        }
+
+        #game-over-screen h2 {
+            font-size: 2.5rem;
+            color: #ff4136;
+            text-shadow: 2px 2px #fff;
+            margin-top: 0;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        /* Button styling */
+        button {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 1rem;
+            padding: 15px 30px;
+            border: 3px solid #fff;
+            border-radius: 8px;
+            background: linear-gradient(45deg, #ff00ff, #00ffff);
+            color: #1a1a1a;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: all 0.2s ease-in-out;
+            box-shadow: 0 5px #000;
+        }
+
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px #000;
+            filter: brightness(1.2);
+        }
+        
+        button:active {
+            transform: translateY(2px);
+            box-shadow: 0 3px #000;
+        }
+        
+        #startButton {
+            animation: pulse 2s infinite;
+        }
+        
+        /* Footer styling */
+        footer {
+            margin-top: 15px;
+            font-size: 0.8rem;
+            color: #aaa;
+            letter-spacing: 1px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <h1>Pixel Runner</h1>
+        <div id="ui-container">
+            <div id="score">Score: 0</div>
+            <div id="high-score">High Score: 0</div>
+        </div>
+        <canvas id="gameCanvas" width="800" height="400"></canvas>
+        
+        <!-- Start screen overlay -->
+        <div id="start-screen">
+            <h2>Get Ready!</h2>
+            <p>Press Space or Tap to Jump</p>
+            <button id="startButton">Start Game</button>
+        </div>
+
+        <!-- Game Over screen overlay -->
+        <div id="game-over-screen" class="hidden">
+            <h2>Game Over</h2>
+            <p id="finalScore"></p>
+            <button id="restartButton">Restart</button>
+        </div>
+        <footer>Made with ❤️ by Batzy</footer>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // UI Elements
+        const scoreEl = document.getElementById('score');
+        const highScoreEl = document.getElementById('high-score');
+        const startScreen = document.getElementById('start-screen');
+        const gameOverScreen = document.getElementById('game-over-screen');
+        const startButton = document.getElementById('startButton');
+        const restartButton = document.getElementById('restartButton');
+        const finalScoreEl = document.getElementById('finalScore');
+        
+        // Game variables
+        const playerWidth = 32;
+        const playerHeight = 50;
+        const gravity = 0.6;
+        const jumpStrength = -12;
+        const groundHeight = 20;
+        
+        let player, obstacles, score, highScore, gameSpeed, isGameOver;
+
+        // Player object
+        class Player {
+            constructor(x, y, width, height) {
+                this.x = x;
+                this.y = y;
+                this.width = width;
+                this.height = height;
+                this.colors = {
+                    skin: '#f0c2a2', // Light skin tone
+                    hair: '#59382f', // Brown hair
+                    shirt: '#e64f4f', // Red shirt
+                    pants: '#4e75d1', // Blue pants
+                    shoe: '#3d3535'  // Dark gray shoes
+                };
+                this.velocityY = 0;
+                this.isJumping = false;
+                this.jumpsLeft = 2; // Allow for double jump
+                this.animFrame = 0; // For running animation
+            }
+
+            draw() {
+                // Update animation frame only when on the ground
+                if (!this.isJumping) {
+                    this.animFrame = (this.animFrame + 0.2) % 4;
+                } else {
+                    // Use a static frame for jumping
+                    this.animFrame = 0; 
+                }
+                const frame = Math.floor(this.animFrame);
+                const C = this.colors;
+
+                if (this.isJumping) {
+                    // --- JUMPING POSE ---
+                    // Head
+                    ctx.fillStyle = C.hair;
+                    ctx.fillRect(this.x + 8, this.y, 20, 10);
+                    ctx.fillRect(this.x + 24, this.y + 4, 4, 6);
+                    ctx.fillStyle = C.skin;
+                    ctx.fillRect(this.x + 8, this.y + 10, 16, 8);
+                    ctx.fillStyle = '#000';
+                    ctx.fillRect(this.x + 20, this.y + 12, 4, 4); // Eye
+
+                    // Torso
+                    ctx.fillStyle = C.shirt;
+                    ctx.fillRect(this.x + 8, this.y + 18, 14, 16);
+                    
+                    // Arms (back)
+                    ctx.fillStyle = C.skin;
+                    ctx.fillRect(this.x + 4, this.y + 20, 4, 10);
+                    
+                    // Legs (tucked)
+                    ctx.fillStyle = C.pants;
+                    ctx.fillRect(this.x + 10, this.y + 34, 10, 8);
+                    ctx.fillStyle = C.shoe;
+                    ctx.fillRect(this.x + 8, this.y + 42, 8, 6);
+                } else {
+                    // --- RUNNING ANIMATION ---
+                    switch (frame) {
+                        case 0: // Right leg forward
+                            // Head & Torso are same for all run frames
+                            ctx.fillStyle = C.hair;
+                            ctx.fillRect(this.x + 8, this.y, 20, 10); 
+                            ctx.fillStyle = C.skin;
+                            ctx.fillRect(this.x + 8, this.y + 10, 16, 8);
+                            ctx.fillStyle = '#000';
+                            ctx.fillRect(this.x + 20, this.y + 12, 4, 4); 
+                            ctx.fillStyle = C.shirt;
+                            ctx.fillRect(this.x + 8, this.y + 18, 14, 18);
+
+                            // Back Arm
+                            ctx.fillStyle = C.skin;
+                            ctx.fillRect(this.x + 4, this.y + 20, 4, 12);
+                            
+                            // Front Leg
+                            ctx.fillStyle = C.pants;
+                            ctx.fillRect(this.x + 16, this.y + 36, 8, 8);
+                            ctx.fillStyle = C.shoe;
+                            ctx.fillRect(this.x + 16, this.y + 44, 10, 6);
+                            
+                            // Back Leg
+                            ctx.fillStyle = C.pants;
+                            ctx.fillRect(this.x + 8, this.y + 36, 8, 6);
+                            
+                            // Front Arm
+                            ctx.fillStyle = C.skin;
+                            ctx.fillRect(this.x + 22, this.y + 20, 4, 12);
+                            break;
+
+                        case 1: // Passing pose
+                        case 3: 
+                            ctx.fillStyle = C.hair;
+                            ctx.fillRect(this.x + 8, this.y, 20, 10); 
+                            ctx.fillStyle = C.skin;
+                            ctx.fillRect(this.x + 8, this.y + 10, 16, 8);
+                            ctx.fillStyle = '#000';
+                            ctx.fillRect(this.x + 20, this.y + 12, 4, 4); 
+                            ctx.fillStyle = C.shirt;
+                            ctx.fillRect(this.x + 8, this.y + 18, 14, 18);
+                            
+                            // Arms (down)
+                            ctx.fillStyle = C.skin;
+                            ctx.fillRect(this.x + 4, this.y + 20, 4, 14);
+                            ctx.fillRect(this.x + 22, this.y + 20, 4, 14);
+                            
+                            // Legs
+                            ctx.fillStyle = C.pants;
+                            ctx.fillRect(this.x + 8, this.y + 36, 8, 10);
+                            ctx.fillRect(this.x + 16, this.y + 36, 8, 10);
+                            ctx.fillStyle = C.shoe;
+                            ctx.fillRect(this.x + 8, this.y + 46, 8, 4);
+                            ctx.fillRect(this.x + 16, this.y + 46, 8, 4);
+                            break;
+
+                        case 2: // Left leg forward
+                            ctx.fillStyle = C.hair;
+                            ctx.fillRect(this.x + 8, this.y, 20, 10);
+                            ctx.fillStyle = C.skin;
+                            ctx.fillRect(this.x + 8, this.y + 10, 16, 8);
+                            ctx.fillStyle = '#000';
+                            ctx.fillRect(this.x + 20, this.y + 12, 4, 4);
+                            ctx.fillStyle = C.shirt;
+                            ctx.fillRect(this.x + 8, this.y + 18, 14, 18);
+
+                            // Front Arm
+                            ctx.fillStyle = C.skin;
+                            ctx.fillRect(this.x + 4, this.y + 20, 4, 12);
+                            
+                            // Back Leg
+                            ctx.fillStyle = C.pants;
+                            ctx.fillRect(this.x + 16, this.y + 36, 8, 6);
+                            
+                            // Front Leg
+                            ctx.fillStyle = C.pants;
+                            ctx.fillRect(this.x + 8, this.y + 36, 8, 8);
+                            ctx.fillStyle = C.shoe;
+                            ctx.fillRect(this.x + 6, this.y + 44, 10, 6);
+
+                            // Back arm
+                            ctx.fillStyle = C.skin;
+                            ctx.fillRect(this.x + 22, this.y + 20, 4, 12);
+                            break;
+                    }
+                }
+            }
+
+            update() {
+                this.velocityY += gravity;
+                this.y += this.velocityY;
+
+                // Prevent falling through the floor
+                if (this.y + this.height > canvas.height - groundHeight) {
+                    this.y = canvas.height - this.height - groundHeight;
+                    this.velocityY = 0;
+                    if (this.isJumping) { // Only reset if it was a jump
+                        this.jumpsLeft = 2; // Reset jumps on landing
+                        this.isJumping = false;
+                    }
+                }
+                
+                // Prevent going above the ceiling
+                if (this.y < 0) {
+                    this.y = 0;
+                    this.velocityY = 0;
+                }
+            }
+
+            jump() {
+                if (this.jumpsLeft > 0) {
+                    this.velocityY = jumpStrength;
+                    this.isJumping = true;
+                    this.jumpsLeft--;
+                }
+            }
+        }
+
+        // Obstacle object
+        class Obstacle {
+            constructor(x, y, width, height, color) {
+                this.x = x;
+                this.y = y;
+                this.width = width;
+                this.height = height;
+                this.color = color;
+            }
+
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+            }
+
+            update() {
+                this.x -= gameSpeed;
+            }
+        }
+
+        // Initialize or reset the game
+        function init() {
+            player = new Player(50, canvas.height - playerHeight - groundHeight, playerWidth, playerHeight);
+            obstacles = [];
+            score = 0;
+            highScore = localStorage.getItem('pixelRunnerHighScore') || 0;
+            gameSpeed = 5;
+            isGameOver = false;
+
+            scoreEl.textContent = `Score: ${score}`;
+            highScoreEl.textContent = `High Score: ${highScore}`;
+            
+            gameOverScreen.classList.add('hidden');
+            
+            // Generate the first obstacle
+            spawnObstacle();
+        }
+
+        // Main game loop
+        let obstacleTimer = 0;
+        function animate() {
+            if (isGameOver) return;
+
+            requestAnimationFrame(animate);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw background
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0, '#1e2a3a');
+            gradient.addColorStop(1, '#4a6e8a');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw ground
+            ctx.fillStyle = '#3a2e2a';
+            ctx.fillRect(0, canvas.height - groundHeight, canvas.width, groundHeight);
+            ctx.fillStyle = '#5a4e4a';
+            ctx.fillRect(0, canvas.height - groundHeight, canvas.width, 5);
+
+
+            player.update();
+            player.draw();
+            
+            // Spawn obstacles periodically
+            obstacleTimer++;
+            if (obstacleTimer > 100 - gameSpeed * 5 && Math.random() > 0.5) {
+                spawnObstacle();
+                obstacleTimer = 0;
+            }
+
+            // Update and draw obstacles
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                let o = obstacles[i];
+                o.update();
+                o.draw();
+                
+                // Collision detection
+                if (
+                    player.x < o.x + o.width &&
+                    player.x + player.width > o.x &&
+                    player.y < o.y + o.height &&
+                    player.y + player.height > o.y
+                ) {
+                    endGame();
+                }
+
+                // Remove obstacles that have gone off-screen
+                if (o.x + o.width < 0) {
+                    obstacles.splice(i, 1);
+                    // Increase score for passing an obstacle
+                    updateScore();
+                }
+            }
+        }
+        
+        function spawnObstacle() {
+            const minHeight = 40;
+            const maxHeight = 120;
+            const height = Math.floor(Math.random() * (maxHeight - minHeight + 1)) + minHeight;
+            const width = 30;
+            const y = canvas.height - height - groundHeight;
+            const x = canvas.width;
+            
+            const obstacleColor = `hsl(${Math.random() * 360}, 80%, 60%)`;
+
+            obstacles.push(new Obstacle(x, y, width, height, obstacleColor));
+        }
+
+        function updateScore() {
+            score++;
+            scoreEl.textContent = `Score: ${score}`;
+            // Increase game speed slightly every 5 points
+            if (score % 5 === 0) {
+                gameSpeed += 0.2;
+            }
+        }
+
+        // Event Listeners for player control
+        function handleJump(e) {
+            if (e.code === 'Space' || e.type === 'mousedown' || e.type === 'touchstart') {
+                e.preventDefault(); // prevent space from scrolling and double tap zoom
+                if (!isGameOver) {
+                    player.jump();
+                }
+            }
+        }
+        
+        document.addEventListener('keydown', handleJump);
+        canvas.addEventListener('mousedown', handleJump);
+        canvas.addEventListener('touchstart', handleJump);
+        
+        // Game state functions
+        function startGame() {
+            startScreen.classList.add('hidden');
+            init();
+            animate();
+        }
+
+        function endGame() {
+            isGameOver = true;
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('pixelRunnerHighScore', highScore);
+                highScoreEl.textContent = `High Score: ${highScore}`;
+            }
+            finalScoreEl.textContent = `Your Score: ${score}`;
+            gameOverScreen.classList.remove('hidden');
+        }
+
+        startButton.addEventListener('click', startGame);
+        restartButton.addEventListener('click', startGame);
+    </script>
+</body>
+</html>
+
